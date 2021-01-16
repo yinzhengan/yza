@@ -94,3 +94,96 @@ static void __exit vser_exit(void)
 /*alias*/
 module_init(vser_init); //
 module_exit(vser_exit);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+import smbus  #导入smbus模块
+import math   #导入math模块
+
+
+power_mgmt_1 = 0x6b 
+power_mgmt_2 = 0x6c 
+
+def read_byte(adr):  #定义读字节函数，参数是adr
+    return bus.read_byte_data(address, adr) #返回读字符数据 （地址指令）
+
+
+def read_word(adr): #定义读取单个字函数 WORD=2Byte
+    high = bus.read_byte_data(address, adr) #
+    low = bus.read_byte_data(address, adr+1)
+    val = (high << 8) + low
+    return val
+
+
+def read_word_2c(adr): #从给定的寄存器的读取一个字并转换为二进制补码
+    val = read_word(adr)
+    if (val >= 0x8000):
+        return -((65535 - val) + 1)
+    else:
+        return val
+
+
+def dist(a, b): #定义一个dist函数进行数学运算
+    return math.sqrt((a*a)+(b*b))  #返回运算值
+
+
+def get_y_rotation(x, y, z): #计算y轴的旋转度数
+    radians = math.atan2(x, dist(y, z))  #返回运算值的反正切（以弧度为单位）
+    return -math.degrees(radians)  #将弧度变为角度
+
+
+def get_x_rotation(x, y, z): #计算x轴的旋转度数
+    radians = math.atan2(y, dist(x, z))    
+    return math.degrees(radians)
+
+
+
+
+#从MPU6050传感器的陀螺仪上读取数据
+gyro_xout = read_word_2c(0x43)   #读取x轴方向陀螺仪传感器的测量值
+gyro_yout = read_word_2c(0x45)
+gyro_zout = read_word_2c(0x47)
+
+print( "gyro_xout: ", gyro_xout, " scaled: ", (gyro_xout / 131))  # 除以131，可以得到x方向每秒的旋转度数。
+print( "gyro_yout: ", gyro_yout, " scaled: ", (gyro_yout / 131))  # 除以131，可以得到y方向每秒的旋转度数。
+print("gyro_zout: ", gyro_zout, " scaled: ", (gyro_zout / 131))   # 除以131，可以得到z方向每秒的旋转度数。
+
+
+print("accelerometer data")
+print("---------")
+
+
+accel_xout = read_word_2c(0x3b) #读取x轴方向加速度传感器的测量值
+accel_yout = read_word_2c(0x3d) 
+accel_zout = read_word_2c(0x3f) 
+
+accel_xout_scaled = accel_xout / 16384.0   #16384为加速度原始数据值。得到x轴每秒的旋转度数
+accel_yout_scaled = accel_yout / 16384.0   #16384为加速度原始数据值。得到y轴每秒的旋转度数
+accel_zout_scaled = accel_zout / 16384.0   #16384为加速度原始数据值。得到z轴每秒的旋转度数
+
+print("accel_xout: ", accel_xout, " scaled: ", accel_xout_scaled)  #打印出x轴加速度值和每秒的旋转度数
+print("accel_yout: ", accel_yout, " scaled: ", accel_yout_scaled)  #打印出x轴加速度值和每秒的旋转度数
+print("accel_zout: ", accel_zout, " scaled: ", accel_zout_scaled)  #打印出x轴加速度值和每秒的旋转度数
+
+print( "x rotation: ", get_x_rotation(accel_xout_scaled, accel_yout_scaled, accel_zout_scaled)) #打印x的旋转角度
+print("y rotation: ", get_y_rotation(accel_xout_scaled, accel_yout_scaled, accel_zout_scaled))  #打印y的旋转角度
